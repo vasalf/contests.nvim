@@ -156,15 +156,36 @@ class ContestsPlugin(object):
         lines = text.split("\n")
         self.nvim.api.buf_set_lines(buf, 0, line_count, True, lines)
 
+    def __run_tests(self):
+        SPLITTER = "→ ###"
+        line_count = self.nvim.api.buf_line_count(self.input_buffer)
+        lines = self.nvim.api.buf_get_lines(self.input_buffer, 0, line_count, True)
+        lines.append(SPLITTER)
+        stdin = ""
+        output = ""
+        ci = 0
+        for line in lines:
+            if line == SPLITTER:
+                cout, ret = self.launcher.run(stdin)
+                if cout == "" or cout[-1] != "\n":
+                    cout += "\n"
+                if ret != 0:
+                    cout += f"Command finished with exit code {ret}\n"
+                output += cout
+                if ci != len(lines) - 1:
+                    output += SPLITTER + "\n"
+                stdin = ""
+            else:
+                stdin += line + "\n"
+            ci += 1
+        self.__set_buf_text(self.output_buffer, output)
+
     @pynvim.function("ContestsRun")
     def run(self, args):
         if self.launched:
             if not self.launcher.compile():
                 return
-            output, ret = self.launcher.run(self.__buf_contains(self.input_buffer))
-            if ret != 0:
-                output += f"Command finished with exit code {ret}"
-            self.__set_buf_text(self.output_buffer, output)
+            self.__run_tests()
 
     @pynvim.function("ContestsCompile")
     def compile(self, args):
