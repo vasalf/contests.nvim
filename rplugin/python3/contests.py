@@ -4,6 +4,7 @@ import pynvim
 class ContestsPlugin(object):
     def __init__(self, nvim):
         self.nvim = nvim
+        self.launched = False
         self.input_buffer = None
         self.output_buffer = None
         self.main_window = None
@@ -54,18 +55,15 @@ class ContestsPlugin(object):
         self.nvim.api.win_set_width(self.output_window, height // 2)
         self.nvim.api.win_set_width(self.main_window, width - io_buf_width)
 
-    def request_cb(self, args):
-        self.nvim.command('echo "request"')
-        pass
-
-    def notification_cb(self, args):
-        self.nvim.command('echo "notification"')
-        pass
+    @pynvim.autocmd("VimResized")
+    def au_resize_windows(self):
+        if self.launched:
+            self.resize_windows([])
 
     @pynvim.function("ContestsInit")
     def init(self, args):
         self.create_buffers(args)
         self.open_windows(args)
         self.resize_windows(args)
-        self.nvim.subscribe("grid_resize")
+        self.launched = True
 
