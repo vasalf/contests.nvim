@@ -84,7 +84,7 @@ class CppLauncher(Launcher):
 
     def compile(self):
         flags = self.__get_flags()
-        out, ret = self.launch(["g++"] + flags + [self.filename, "-o", self.executable], "")
+        out, ret = self.launch(["g++"] + [self.filename, "-o", self.executable] + flags, "")
         if out != "":
             self.nvim.command(f'echo "{out}"')
         return ret == 0
