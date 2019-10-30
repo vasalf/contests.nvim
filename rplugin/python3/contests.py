@@ -6,20 +6,24 @@ import sys
 
 class Launcher(abc.ABC):
     def launch(self, cmd, stdin):
-        result = subprocess.run(cmd,
-                input=stdin,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                encoding="UTF8")
-        stdout = result.stdout
-        stderr = result.stderr
+        process = subprocess.Popen(cmd, stdin=subprocess.PIPE,
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE,
+                                   encoding="UTF8")
+        process.stdin.write(stdin)
+        process.stdin.flush()
+        process.stdin.close()
+        process.wait()
+
+        stdout = process.stdout.read()
+        stderr = process.stderr.read()
         if stdout == "":
-            return stderr, result.returncode
+            return stderr, process.returncode
         if stderr == "":
-            return stdout, result.returncode
+            return stdout, process.returncode
         if stdout[-1] != "\n":
             stdout += "\n"
-        return stdout + stderr, result.returncode
+        return stdout + stderr, process.returncode
 
     @abc.abstractmethod
     def compile(self):
