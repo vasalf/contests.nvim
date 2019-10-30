@@ -56,7 +56,7 @@ class CppLauncher(Launcher):
         path = os.path.dirname(os.path.abspath(self.filename))
         while path != "":
             try:
-                with open(os.path.join(path, ".contests-conf.json", "r") as fin:
+                with open(os.path.join(path, ".contests-conf.json"), "r") as fin:
                     return json.load(fin)
             except FileNotFoundError:
                 pass
@@ -73,8 +73,8 @@ class CppLauncher(Launcher):
         flags = CppLauncher.DEFAULT_FLAGS
         if "flags" in config["cpp"]:
             flags = config["cpp"]["flags"]
-        if "extra_flags" in config["cpp"]:
-            flags += config["cpp"]["extra_flags"]
+        if "extra-flags" in config["cpp"]:
+            flags += config["cpp"]["extra-flags"]
         return flags
 
     def __init__(self, nvim, filename):
