@@ -1,4 +1,6 @@
 import abc
+import json
+import os.path
 import pynvim
 import subprocess
 import sys
@@ -42,16 +44,43 @@ class PythonLauncher(Launcher):
 
 
 class CppLauncher(Launcher):
+    DEFAULT_FLAGS = ["-std=c++17",
+                     "-Wall", "-Wextra","-Wshadow",
+                     "-fsanitize=undefined", "-DLOCAL", "-D_GLIBCXX_DEBUG", "-ggdb3"]
+
+    def __extra_config(self):
+        path = os.path.dirname(os.path.abspath(self.filename))
+        while path != "":
+            try:
+                with open(os.path.join(path, ".contests-conf.json", "r") as fin:
+                    return json.load(fin)
+            except FileNotFoundError:
+                pass
+            if path == "/":
+                path = ""
+            else:
+                path = os.path.dirname(path)
+        return {}
+
+    def __get_flags(self):
+        config = self.__extra_config()
+        if "cpp" not in config:
+            return CppLauncher.DEFAULT_FLAGS
+        flags = CppLauncher.DEFAULT_FLAGS
+        if "flags" in config["cpp"]:
+            flags = config["cpp"]["flags"]
+        if "extra_flags" in config["cpp"]:
+            flags += config["cpp"]["extra_flags"]
+        return flags
+
     def __init__(self, nvim, filename):
         self.nvim = nvim
         self.filename = filename
         self.executable = self.filename[:self.filename.rfind('.')]
 
     def compile(self):
-        out, ret = self.launch(["g++", "-std=c++17",
-                               "-Wall", "-Wextra","-Wshadow",
-                               "-fsanitize=undefined", "-DLOCAL", "-D_GLIBCXX_DEBUG", "-ggdb3",
-                               self.filename, "-o", self.executable], "")
+        flags = self.__get_flags()
+        out, ret = self.launch(["g++"] + flags + [self.filename, "-o", self.executable], "")
         if out != "":
             self.nvim.command(f'echo "{out}"')
         return ret == 0
